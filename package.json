@@ -35,5 +35,9 @@
     "@typescript-eslint/parser": "5.9.0",
     "eslint-plugin-import": "2.25.4",
     "eslint-plugin-react": "7.28.0"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "cheerio": "^1.0.0-rc.10"
   }
 }
