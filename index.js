@@ -7,6 +7,8 @@ const url = 'https://memegen-link-examples-upleveled.netlify.app/'; // url to th
 const number = 10; // number of memes you want to scrape
 const directory = `C:\\Users\\rritt\\projects\\node-meme-scraper`; // directory of the program
 
+let progress = '';
+
 function clrFolder() {
   const subdir = directory + `\\memes\\`;
   Fs.readdir(subdir, (er, files) => {
@@ -50,6 +52,17 @@ function getImgUrls(siteHtml, num) {
   return list;
 }
 
+function printProgress(total) {
+  process.stdout.clearLine();
+  process.stdout.cursorTo(0);
+  progress += '###';
+  let space = '';
+  for (let k = progress.length / 3; k <= total - 1; k++) {
+    space += '   ';
+  }
+  process.stdout.write('[' + progress + space + ']');
+}
+
 async function downloadImage(durl, j) {
   const path = Path.resolve(
     directory,
@@ -57,15 +70,13 @@ async function downloadImage(durl, j) {
     ('0' + (j + 1)).slice(-2) + '.jpg',
   );
   const writer = Fs.createWriteStream(path);
-
   const response = await axios({
     url: durl,
     method: 'GET',
     responseType: 'stream',
   });
-
   response.data.pipe(writer);
-
+  printProgress(progress);
   return new Promise((resolve, reject) => {
     writer.on('finish', resolve);
     writer.on('error', reject);
