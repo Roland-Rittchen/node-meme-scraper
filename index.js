@@ -14,12 +14,10 @@ let progress = '';
 
 // function to clear out the memes folder to avoid file conflicts
 function clrFolder() {
-  const subdir = directory;
-  Fs.readdir(subdir, (er, files) => {
+  Fs.readdir(directory, (er, files) => {
     if (er) throw er;
-
     for (const file of files) {
-      Fs.unlink(Path.join(subdir, file), (err) => {
+      Fs.unlink(Path.join(directory, file), (err) => {
         if (err) throw err;
       });
     }
@@ -39,16 +37,13 @@ async function getSite(siteUrl) {
 
 // function extracting image urls from html text
 function getImgUrls(siteHtml, num) {
-  // Load HTML we fetched previously
-  const $ = cheerio.load(siteHtml);
-  // Select all the img items in plainlist class
-  const listItems = $('img');
-  // extract first number of img links
+  const $ = cheerio.load(siteHtml); // Load HTML we fetched previously
+  const listItems = $('img'); // Select all the img items in plainlist class
   const list = [];
   for (let i = 0; i < num; i++) {
+    // extract list of img links, num defines how many links are put in the list
     let imgUrl = listItems[i]['attribs']['src'];
-    // cleanup link
-    imgUrl = imgUrl.replace('?width=300', '');
+    imgUrl = imgUrl.replace('?width=300', ''); // cleanup link - removing the formatting part in the html
     list.push(imgUrl);
   }
   return list;
@@ -56,19 +51,19 @@ function getImgUrls(siteHtml, num) {
 
 // function for the progress bar
 function printProgress(total) {
-  process.stdout.clearLine();
-  process.stdout.cursorTo(0);
-  progress += '###';
+  process.stdout.clearLine(); // clear the line of the old progress bar
+  process.stdout.cursorTo(0); // reset the cursor to the beginning of the line
+  progress += '###'; // add to the progress barr
   let space = '';
   for (let k = progress.length / 3; k <= total - 1; k++) {
-    space += '   ';
+    space += '   '; // fill the remainder of the space to 100% with white space
   }
-  process.stdout.write('[' + progress + space + ']');
+  process.stdout.write('[' + progress + space + ']'); // printout the new progress bar
 }
 
 // function to download a given image from a url
 async function downloadImage(durl, j) {
-  const path = Path.resolve(directory, ('0' + (j + 1)).slice(-2) + '.jpg');
+  const path = Path.resolve(directory, ('0' + (j + 1)).slice(-2) + '.jpg'); // create the path to where the image is saved, incl filename
   const writer = Fs.createWriteStream(path);
   const response = await axios({
     url: durl,
@@ -83,6 +78,7 @@ async function downloadImage(durl, j) {
   });
 }
 
+// function to get a full list of available templates
 async function getTemplates(siteUrl) {
   try {
     // Fetch HTML of the page we want to scrape
@@ -93,18 +89,21 @@ async function getTemplates(siteUrl) {
   }
 }
 
+// function to check if there is a template for a given term
 async function isTemplate(requested, baseUrl) {
-  const answer = await getTemplates(baseUrl + 'templates?animated=false');
+  const answer = await getTemplates(baseUrl + 'templates?animated=false'); // get the list of all available templates
   const ansArr = answer.filter(function (el) {
-    return el.id === requested;
+    return el.id === requested; // see if the request is in the list of templates
   });
   if (ansArr.length > 0) {
-    return ansArr;
+    return ansArr; // if template exists return the template id
   } else {
-    return 'error';
+    return 'error'; // if template does not exist return error
   }
 }
 
+// create a meme with a given template with the top text and the bottom text
+// --> very similar to downloadImage -> TO DO: integrate the two functions
 async function createMeme(createMemeUrl, tempID, topStr, botStr) {
   try {
     const path = Path.resolve(directory, 'custom.jpg');
@@ -137,20 +136,21 @@ async function createMeme(createMemeUrl, tempID, topStr, botStr) {
 // --------------------------------------------------------
 clrFolder();
 if (!process.argv[2]) {
-  const urlSite = await getSite(mainUrl);
-  const linkList = getImgUrls(urlSite, number);
-  linkList.forEach(downloadImage);
+  // if there are no arguments given - the program will download a given number of images from the main page
+  const siteHtml = await getSite(mainUrl); // download the entire html code of a page
+  const linkList = getImgUrls(siteHtml, number); // extract the given number of image urls
+  linkList.forEach(downloadImage); // download the images
 } else {
   // Expected input format: node index.js hello karl bender
-  const meme = process.argv[4];
-  const top = process.argv[2];
-  const bot = process.argv[3];
+  const meme = process.argv[4]; // the requested meme template
+  const top = process.argv[2]; // top text for the meme to be created
+  const bot = process.argv[3]; // bottom text for the meme to be created
 
-  const resp = await isTemplate(meme, reqUrl);
+  const resp = await isTemplate(meme, reqUrl); // check if the requested meme template is available
   if (resp === 'error') {
-    console.log(`No meme was found for your input of ${meme}`);
+    console.log(`No meme was found for your input of ${meme}`); // if template unavailable tell the user
   } else {
-    await createMeme(reqUrl + 'images', resp[0].id, top, bot);
-    console.log('Success! Your custom meme was saved in the local folder!');
+    await createMeme(reqUrl + 'images', resp[0].id, top, bot); // template available -> create the meme and save it
+    console.log('Success! Your custom meme was saved in the local folder!'); // inform the user
   }
 }
