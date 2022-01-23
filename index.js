@@ -13,7 +13,11 @@ const directory = `.\\memes\\`; // directory to save the files   hardcoded optio
 let progress = '';
 
 // function to clear out the memes folder to avoid file conflicts
-function clrFolder() {
+async function clrFolder() {
+  await Fs.mkdir(directory, (err) => {
+    if (err) throw err;
+    console.log('Directory created successfully!');
+  });
   Fs.readdir(directory, (er, files) => {
     if (er) throw er;
     for (const file of files) {
@@ -134,7 +138,7 @@ async function createMeme(createMemeUrl, tempID, topStr, botStr) {
 // --------------------------------------------------------
 // MAIN LOGIC
 // --------------------------------------------------------
-clrFolder();
+await clrFolder();
 if (!process.argv[2]) {
   // if there are no arguments given - the program will download a given number of images from the main page
   const siteHtml = await getSite(mainUrl); // download the entire html code of a page
