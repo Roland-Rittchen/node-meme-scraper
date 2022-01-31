@@ -14,18 +14,21 @@ let progress = '';
 
 // function to clear out the memes folder to avoid file conflicts
 async function clrFolder() {
-  await Fs.mkdir(directory, (err) => {
-    if (err) throw err;
-    console.log('Directory created successfully!');
-  });
-  Fs.readdir(directory, (er, files) => {
-    if (er) throw er;
-    for (const file of files) {
-      Fs.unlink(Path.join(directory, file), (err) => {
-        if (err) throw err;
-      });
-    }
-  });
+  if (!Fs.existsSync(directory)) {
+    await Fs.mkdir(directory, (err) => {
+      if (err) throw err;
+      console.log('Directory created successfully!');
+    });
+  } else {
+    Fs.readdir(directory, (er, files) => {
+      if (er) throw er;
+      for (const file of files) {
+        Fs.unlink(Path.join(directory, file), (err) => {
+          if (err) throw err;
+        });
+      }
+    });
+  }
 }
 
 // function to get entire html code from the website provided
@@ -54,12 +57,12 @@ function getImgUrls(siteHtml, num) {
 }
 
 // function for the progress bar
-function printProgress(total) {
+function printProgress() {
   process.stdout.clearLine(); // clear the line of the old progress bar
   process.stdout.cursorTo(0); // reset the cursor to the beginning of the line
   progress += '###'; // add to the progress barr
   let space = '';
-  for (let k = progress.length / 3; k <= total - 1; k++) {
+  for (let k = progress.length / 3; k <= number - 1; k++) {
     space += '   '; // fill the remainder of the space to 100% with white space
   }
   process.stdout.write('[' + progress + space + ']'); // printout the new progress bar
@@ -75,7 +78,7 @@ async function downloadImage(durl, j) {
     responseType: 'stream',
   });
   response.data.pipe(writer);
-  printProgress(progress);
+  printProgress();
   return new Promise((resolve, reject) => {
     writer.on('finish', resolve);
     writer.on('error', reject);
